@@ -33,6 +33,10 @@ export default function HomePage() {
       if (!res.ok) throw new Error(`Failed to submit feedback: ${res.status}`);
       const data = await res.json();
       toast.success("Feedback submitted successfully!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    
       console.log("Feedback submitted:", data);
 
       // Reset form after successful submission

@@ -1,36 +1,52 @@
 import { useEffect, useRef, useState } from 'react';
-import Header from "../components/Header";
-import bgImage from '../assets/feedback.jpg';
 import logo from '../assets/logo.png';
-import phone from '../assets/phone.svg';
-import linkedin from '../assets/linkedin.svg';
-import instagram from '../assets/instagram.svg';
-import facebook from '../assets/facebook.svg';
-// import CharacterSlideshow from '../components/characterSlideShow';
-import arrow from '../assets/right-arrow.svg';
-import ContactUs from '../components/contactUs';
+
 import Footer from '../components/footer';
-import Property from '../components/properties';
 import FeedbackBoard from '../components/properties';
+import { toast } from 'react-toastify';
 
 export default function HomePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [category, setCategory] = useState("bug");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const categories = [
-    { value: "bug", label: "bug" },
+    { value: "bug", label: "Bug" },
     { value: "feature", label: "Feature" },
     { value: "improvement", label: "Improvement" },
-
   ];
+      const BACKEND_URL = import.meta.env.VITE_BACKEND_URL; // Vite
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const feedback = { category, title, description };
-    console.log("Submitting feedback:", feedback);
-    // TODO: send to backend (e.g. via fetch or axios)
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/feedback/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, title, description }),
+      });
+
+      if (!res.ok) throw new Error(`Failed to submit feedback: ${res.status}`);
+      const data = await res.json();
+      toast.success("Feedback submitted successfully!");
+      console.log("Feedback submitted:", data);
+
+      // Reset form after successful submission
+      setCategory("bug");
+      setTitle("");
+      setDescription("");
+
+      // Optionally, refresh FeedbackBoard (could trigger a re-fetch)
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast.error("Failed to submit feedback. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -43,28 +59,13 @@ export default function HomePage() {
           (child as HTMLElement).style.transition = 'opacity 0.5s ease, transform 0.5s ease';
           (child as HTMLElement).style.opacity = '1';
           (child as HTMLElement).style.transform = 'translateY(0)';
-        }, index * 200); // Stagger the animations
+        }, index * 200);
       });
     }
   }, []);
 
   return (
     <div>
-      {/* <div className='bg-gray-900 text-white h-8 p-1'>
-        <div className='flex justify-between items-center lg:mx-12'>
-          <div className='flex justify-between items-center gap-5  text-white'>
-            <img src={phone} alt="" className='w-5' />
-            <p>+ (250)-787-299-001</p>
-          </div>
-          <div className='flex justify-between items-center gap-5  text-white'>
-            <img src={linkedin} alt="" className='w-5' />
-            <img src={instagram} alt="" className='w-5' />
-            <img src={facebook} alt="" className='w-5' />
-
-          </div>
-        </div>
-      </div> */}
-      {/* <Header /> */}
       <div className="bg-gray-900 h-screen flex flex-row justify-center items-center p-10 gap-10">
         {/* LEFT SIDE - INTRO */}
         <div className="flex flex-col justify-center items-center border-2 border-white w-[600px] rounded-2xl p-6">
@@ -148,7 +149,7 @@ export default function HomePage() {
                 onClick={() => {
                   setTitle("");
                   setDescription("");
-                  setCategory("formative");
+                  setCategory("bug");
                 }}
                 className="text-blue-500 font-semibold hover:underline"
               >
@@ -156,19 +157,19 @@ export default function HomePage() {
               </button>
               <button
                 type="submit"
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-600"
+                disabled={submitting}
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-600 disabled:opacity-50"
               >
-                Submit
+                {submitting ? "Submitting..." : "Submit"}
               </button>
             </div>
           </form>
         </div>
       </div>
-      <FeedbackBoard />
-      {/* <Property /> */}
-      <ContactUs />
-      <Footer />
 
+      <FeedbackBoard />
+
+      <Footer />
     </div>
   );
 }
